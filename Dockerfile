@@ -1,20 +1,25 @@
 FROM openjdk:8-jdk-alpine
 
-RUN apk add --no-cache git openssh-client curl unzip bash ttf-dejavu coreutils
+RUN apk add --no-cache git openssh-client curl unzip bash ttf-dejavu coreutils sudo
 
 ENV JENKINS_HOME /var/jenkins_home
 ENV JENKINS_SLAVE_AGENT_PORT 50000
 
-ARG user=jenkins
+ARG user=ciuser
 ARG group=jenkins
-ARG uid=1000
-ARG gid=1000
+ARG uid=1500
+ARG gid=1500
 
 # Jenkins is run with user `jenkins`, uid = 1000
 # If you bind mount a volume from the host or a data container, 
 # ensure you use the same uid
 RUN addgroup -g ${gid} ${group} \
-    && adduser -h "$JENKINS_HOME" -u ${uid} -G ${group} -s /bin/bash -D ${user}
+    && adduser -h "$JENKINS_HOME" -u ${uid} -G ${group} -s /bin/bash -D ${user} \
+    && echo "${user}:123456" | chpasswd
+
+# Give $user to root privilege
+RUN echo "${user}	ALL=(ALL:ALL) ALL" >> /etc/sudoers
+
 
 # Jenkins home directory is a volume, so configuration and build history 
 # can be persisted and survive image upgrades
